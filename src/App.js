@@ -50,6 +50,7 @@ function App() {
   };
 
   const onDragOverItem = (index) => (e) => {
+    e.stopPropagation();
     dragIndexRef.current = index;
   };
 
