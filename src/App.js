@@ -44,6 +44,9 @@ function App() {
 
   const onDragOver = (label) => (e) => {
     dragTo.current = label;
+    if (dragFrom.current.label !== label) {
+      dragIndexRef.current = null;
+    }
   };
 
   const onDragOverItem = (index) => (e) => {
