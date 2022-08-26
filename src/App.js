@@ -188,7 +188,7 @@ function App() {
                   onDragStart={onDragStart(list.label, item, index)}
                   onDragOver={onDragOverItem(index)}
                   onDragEnd={onDrop}
-                  className="px-5 py-1 border border-black mt-5 first:mt-0 text-xl text-neutral-700 bg-neutral-300"
+                  className="px-5 py-1 border border-black mt-5 first:mt-0 text-xl text-neutral-700 overflow-hidden bg-neutral-300"
                 >
                   {item.label}
                 </li>
