@@ -171,7 +171,7 @@ function App() {
           <div
             key={index}
             onDragOver={onDragOver(list.label)}
-            className="border border-black w-[200px] text-center"
+            className="border border-black w-[200px] min-h-[550px] text-center"
           >
             <h2 className="px-10 py-1 font-medium text-xl text-neutral-700 border-b border-black bg-accent">
               {list.label}
