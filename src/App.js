@@ -165,7 +165,7 @@ function App() {
   };
 
   const reviewExist = () =>
-    reviewData.map((review) => review.user_id === user.user_id);
+    reviewData.find((review) => review.user_id === user.user_id);
 
   const handleAdd = async (e) => {
     e.preventDefault();
