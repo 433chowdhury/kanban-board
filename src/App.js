@@ -379,7 +379,7 @@ function App() {
             <div className="border border-neutral-700 p-5 min-h-[400px] mt-10">
               <ul className="">
                 {reviewData.map((review, index) => (
-                  <Review data={review} />
+                  <Review key={index} data={review} />
                 ))}
               </ul>
               {!reviewData.length && <p className="text-center">No Review</p>}
