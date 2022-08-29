@@ -9,14 +9,18 @@ function App() {
   const dragIndexRef = useRef(null);
   const timeout = useRef(null);
 
+  // const [processing, setProcessing] = useState(false);
+
   const [notification, setNotification] = useState("");
 
-  const handleNotification = (value) => {
+  const handleNotification = (value, infinite) => {
     setNotification(value);
     if (timeout.current) clearTimeout(timeout.current);
-    timeout.current = setTimeout(() => {
-      setNotification("");
-    }, 3000);
+    if (!infinite) {
+      timeout.current = setTimeout(() => {
+        setNotification("");
+      }, 3000);
+    }
   };
 
   const [user, setUser] = useState(null);
@@ -32,7 +36,7 @@ function App() {
   });
 
   const fetchCards = useCallback(async (userId) => {
-    const response = await fetch("http://localhost:3001/card/3");
+    const response = await fetch(`http://localhost:3001/card/${userId}`);
     const result = await response.json();
     // console.log(result);
     const newTodo = [],
@@ -42,18 +46,15 @@ function App() {
       for (const card of result) {
         switch (card.board_name) {
           case "To Do": {
-            newTodo.push({ label: card.card_name, order: card.card_order });
+            newTodo.push(card);
             break;
           }
           case "In Progress": {
-            newInProgress.push({
-              label: card.card_name,
-              order: card.card_order,
-            });
+            newInProgress.push(card);
             break;
           }
           case "Done": {
-            newDone.push({ label: card.card_name, order: card.card_order });
+            newDone.push(card);
             break;
           }
           default:
@@ -61,19 +62,42 @@ function App() {
         }
       }
     }
-    newTodo.sort((a, b) => a.order - b.order);
+    newTodo.sort((a, b) => a.card_order - b.card_order);
+    newInProgress.sort((a, b) => a.card_order - b.card_order);
+    newDone.sort((a, b) => a.card_order - b.card_order);
     setState({ todo: newTodo, inProgress: newInProgress, done: newDone });
   }, []);
 
   useEffect(() => {
-    fetchCards();
-  }, [fetchCards]);
+    if (user) fetchCards(user.user_id);
+  }, [fetchCards, user]);
 
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
     if (!taskName) return;
-    setTaskName("");
-    setState({ ...state, todo: [...state.todo, { label: taskName }] });
+    try {
+      handleNotification("Please wait...", true);
+      // setProcessing(true);
+      await fetch("http://localhost:3001/card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          card_name: taskName,
+          board_name: "To Do",
+          user_id: user.user_id,
+          card_order: state.todo.length,
+        }),
+      });
+      handleNotification("Saved!");
+      fetchCards(user.user_id);
+      // setProcessing(false);
+      setTaskName("");
+    } catch (e) {
+      // setProcessing(false);
+      handleNotification("Failed");
+    }
   };
 
   const onDragStart = (label, item, index) => (e) => {
@@ -144,6 +168,7 @@ function App() {
         sameBoardOperation(newState, label, item);
         setState(newState);
       } else {
+        item.board_name = dragTo.current;
         switch (dragTo.current) {
           case "To Do": {
             if (dragIndexRef.current !== null) {
@@ -185,13 +210,39 @@ function App() {
             return;
         }
       }
+      handleSave(newState);
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async (newState) => {
     if (!user) {
       handleNotification("Please Login!");
       return;
+    }
+    try {
+      const response = await fetch("http://localhost:3001/update-all-card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([
+          ...newState.todo.map((card, index) => ({
+            ...card,
+            card_order: index,
+          })),
+          ...newState.inProgress.map((card, index) => ({
+            ...card,
+            card_order: index,
+          })),
+          ...newState.done.map((card, index) => ({
+            ...card,
+            card_order: index,
+          })),
+        ]),
+      });
+      if (response.status === 200) handleNotification(await response.text());
+    } catch (err) {
+      if (err) handleNotification("Unsuccessful!");
     }
   };
 
@@ -229,7 +280,7 @@ function App() {
                   onDragEnd={onDrop}
                   className="px-5 py-1 border border-black mt-5 first:mt-0 text-xl text-neutral-700 overflow-hidden bg-neutral-300"
                 >
-                  {item.label}
+                  {item.card_name}
                 </li>
               ))}
             </ul>
@@ -248,13 +299,14 @@ function App() {
           {notification}
         </p>
       )}
-      <Button
+      {/* <Button
+        disabled={processing}
         type="button"
         className="px-7 py-1 border border-black text-accent text-base font-medium active:opacity-75"
         onClick={handleSave}
       >
         Save
-      </Button>
+      </Button> */}
     </main>
   );
 }
