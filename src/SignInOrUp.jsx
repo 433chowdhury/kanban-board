@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Button from "./components/Button";
 import Input from "./components/Input";
 import TextButton from "./components/TextButton";
@@ -78,6 +78,7 @@ function SignInOrUp({
           </>
         ) : (
           <TextButton
+            className="underline"
             onClick={() =>
               setLoginPhase((prevData) =>
                 prevData === "Sign Up"
@@ -142,7 +143,9 @@ function SignInOrUp({
               </TextButton>
             </p>
           )}
-          <Button type="submit ">SUBMIT</Button>
+          <Button className="mt-4" type="submit ">
+            SUBMIT
+          </Button>
         </form>
       )}
     </div>
