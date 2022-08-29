@@ -10,6 +10,7 @@ function SignInOrUp({
   setUser,
   className,
   handleNotification,
+  handleLogout,
   ...rest
 }) {
   const [firstname, setFirstname] = useState("");
@@ -31,8 +32,10 @@ function SignInOrUp({
             password,
           }),
         });
-        setUser(await response.json());
+        const loggedInUser = await response.json();
+        setUser(loggedInUser);
         setLoginPhase("");
+        localStorage.setItem("user", JSON.stringify(loggedInUser));
         handleNotification("Successful!");
       } catch (err) {
         if (err) handleNotification("Unsuccessful!");
@@ -66,13 +69,7 @@ function SignInOrUp({
         {user ? (
           <>
             Welcome {user.first_name}
-            <TextButton
-              className="ml-4"
-              onClick={() => {
-                setUser(null);
-                setLoginPhase("Sign In");
-              }}
-            >
+            <TextButton className="ml-4" onClick={handleLogout}>
               Logout
             </TextButton>
           </>

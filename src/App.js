@@ -13,6 +13,13 @@ function App() {
 
   const [notification, setNotification] = useState("");
 
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.clear();
+    setLoginPhase("Sign In");
+    setState({ todo: [], inProgress: [], done: [] });
+  };
+
   const handleNotification = (value, infinite) => {
     setNotification(value);
     if (timeout.current) clearTimeout(timeout.current);
@@ -23,7 +30,12 @@ function App() {
     }
   };
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const persistedUser = localStorage.getItem("user");
+    console.log(persistedUser);
+    if (persistedUser) return JSON.parse(persistedUser);
+    else return null;
+  });
 
   const [loginPhase, setLoginPhase] = useState("Sign In");
 
@@ -293,6 +305,7 @@ function App() {
         setLoginPhase={setLoginPhase}
         setUser={setUser}
         handleNotification={handleNotification}
+        handleLogout={handleLogout}
       />
       {notification && (
         <p className="fixed bottom-10 right-5 mt-10 px-4 py-3 text-lg bg-neutral-700 text-white">
