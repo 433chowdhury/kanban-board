@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Button from "./components/Button";
 import Input from "./components/Input";
+import Modal from "./components/Modal";
+import Review from "./components/Review";
 import SignInOrUp from "./SignInOrUp";
 
 function App() {
@@ -12,6 +14,12 @@ function App() {
   // const [processing, setProcessing] = useState(false);
 
   const [notification, setNotification] = useState("");
+
+  const [selectedCard, setSelectedCard] = useState(null);
+
+  const [showReviewModal, setShowReviewModal] = useState(null);
+  const [reviewData, setReviewData] = useState([]);
+  const [newReview, setNewReview] = useState("");
 
   const handleLogout = () => {
     setUser(null);
@@ -32,7 +40,6 @@ function App() {
 
   const [user, setUser] = useState(() => {
     const persistedUser = localStorage.getItem("user");
-    console.log(persistedUser);
     if (persistedUser) return JSON.parse(persistedUser);
     else return null;
   });
@@ -83,6 +90,51 @@ function App() {
   useEffect(() => {
     if (user) fetchCards(user.user_id);
   }, [fetchCards, user]);
+
+  const fetchReviews = useCallback(async (card_id) => {
+    setReviewData([]);
+    const response = await fetch(`http://localhost:3001/review/${card_id}`);
+    const result = await response.json();
+    // console.log(result);
+    setReviewData(result);
+  }, []);
+
+  const handleAddReview = async () => {
+    setReviewData([]);
+    const response = await fetch(`http://localhost:3001/review`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        review: newReview,
+        card_id: selectedCard,
+        user_id: user.user_id,
+      }),
+    });
+    const result = await response.text();
+    // console.log(result);
+    setNewReview("");
+    handleNotification(result);
+    fetchReviews(selectedCard);
+  };
+
+  useEffect(() => {
+    if (selectedCard) fetchReviews(selectedCard);
+  }, [fetchReviews, selectedCard]);
+
+  const handleCardClick = (card_id) => () => {
+    setSelectedCard(card_id);
+    setShowReviewModal(true);
+  };
+
+  const handleClose = () => {
+    setShowReviewModal(false);
+    setNewReview("");
+  };
+
+  const reviewExist = () =>
+    reviewData.map((review) => review.user_id === user.user_id);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -286,6 +338,7 @@ function App() {
               {list.data.map((item, index) => (
                 <li
                   key={index}
+                  onClick={handleCardClick(item.card_id)}
                   draggable
                   onDragStart={onDragStart(list.label, item, index)}
                   onDragOver={onDragOverItem(index)}
@@ -320,6 +373,39 @@ function App() {
       >
         Save
       </Button> */}
+      {showReviewModal && (
+        <Modal onClose={handleClose}>
+          <div className="flex flex-col gap-10 w-[700px] overflow-auto max-h-screen">
+            <div className="border border-neutral-700 p-5 min-h-[400px] mt-10">
+              <ul className="">
+                {reviewData.map((review, index) => (
+                  <Review data={review} />
+                ))}
+              </ul>
+              {!reviewData.length && <p className="text-center">No Review</p>}
+            </div>
+            {!reviewExist() && (
+              <div className="flex flex-col items-center mb-10">
+                <textarea
+                  disabled={reviewExist()}
+                  className="border border-neutral-700 mb-5 w-full h-40 p-5"
+                  row={10}
+                  placeholder="Your review..."
+                  value={newReview}
+                  onChange={(e) => setNewReview(e.target.value)}
+                />
+                <Button
+                  disabled={reviewExist()}
+                  className="w-fit"
+                  onClick={handleAddReview}
+                >
+                  Add Review
+                </Button>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </main>
   );
 }

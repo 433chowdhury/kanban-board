@@ -3,7 +3,7 @@ function Button({ children, className, ...rest }) {
     <button
       {...rest}
       className={
-        "px-7 py-1 border border-black text-accent text-base font-medium active:opacity-75 " +
+        "px-7 py-1 border border-black text-accent text-base font-medium active:opacity-75 disabled:opacity-60 " +
         className
       }
     >
