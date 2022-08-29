@@ -1,39 +1,77 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Button from "./components/Button";
+import Input from "./components/Input";
+import SignInOrUp from "./SignInOrUp";
 
 function App() {
   const dragFrom = useRef(null);
   const dragTo = useRef(null);
   const dragIndexRef = useRef(null);
+  const timeout = useRef(null);
+
+  const [notification, setNotification] = useState("");
+
+  const handleNotification = (value) => {
+    setNotification(value);
+    if (timeout.current) clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => {
+      setNotification("");
+    }, 3000);
+  };
+
+  const [user, setUser] = useState(null);
+
+  const [loginPhase, setLoginPhase] = useState("Sign In");
 
   const [taskName, setTaskName] = useState("");
 
   const [state, setState] = useState({
-    todo: [
-      {
-        label: "Task 01",
-      },
-      {
-        label: "Task 02",
-      },
-      {
-        label: "Task 03",
-      },
-      {
-        label: "Task 04",
-      },
-      {
-        label: "Task 05",
-      },
-      {
-        label: "Task 06",
-      },
-    ],
+    todo: [],
     inProgress: [],
     done: [],
   });
 
+  const fetchCards = useCallback(async (userId) => {
+    const response = await fetch("http://localhost:3001/card/3");
+    const result = await response.json();
+    // console.log(result);
+    const newTodo = [],
+      newInProgress = [],
+      newDone = [];
+    if (result) {
+      for (const card of result) {
+        switch (card.board_name) {
+          case "To Do": {
+            newTodo.push({ label: card.card_name, order: card.card_order });
+            break;
+          }
+          case "In Progress": {
+            newInProgress.push({
+              label: card.card_name,
+              order: card.card_order,
+            });
+            break;
+          }
+          case "Done": {
+            newDone.push({ label: card.card_name, order: card.card_order });
+            break;
+          }
+          default:
+            return;
+        }
+      }
+    }
+    newTodo.sort((a, b) => a.order - b.order);
+    setState({ todo: newTodo, inProgress: newInProgress, done: newDone });
+  }, []);
+
+  useEffect(() => {
+    fetchCards();
+  }, [fetchCards]);
+
   const handleAdd = (e) => {
     e.preventDefault();
+    if (!taskName) return;
     setTaskName("");
     setState({ ...state, todo: [...state.todo, { label: taskName }] });
   };
@@ -150,21 +188,22 @@ function App() {
     }
   };
 
+  const handleSave = () => {
+    if (!user) {
+      handleNotification("Please Login!");
+      return;
+    }
+  };
+
   return (
-    <main className="flex flex-col gap-8 justify-start items-center p-20">
+    <main className="relative flex flex-col gap-8 justify-start items-center p-20">
       <form className="flex gap-5" onSubmit={handleAdd}>
-        <input
-          className="px-10 py-3 border border-black text-2xl w-[267px] h-[43px] placeholder:text-neutral-500/95"
+        <Input
           placeholder="Write your task..."
           value={taskName}
           onChange={(e) => setTaskName(e.target.value)}
         />
-        <button
-          type="submit"
-          className="px-7 py-1 border border-black text-accent text-base font-medium"
-        >
-          Add
-        </button>
+        <Button type="submit">Add</Button>
       </form>
       <div className="flex gap-6 justify-center flex-wrap">
         {[
@@ -197,6 +236,25 @@ function App() {
           </div>
         ))}
       </div>
+      <SignInOrUp
+        user={user}
+        loginPhase={loginPhase}
+        setLoginPhase={setLoginPhase}
+        setUser={setUser}
+        handleNotification={handleNotification}
+      />
+      {notification && (
+        <p className="fixed bottom-10 right-5 mt-10 px-4 py-3 text-lg bg-neutral-700 text-white">
+          {notification}
+        </p>
+      )}
+      <Button
+        type="button"
+        className="px-7 py-1 border border-black text-accent text-base font-medium active:opacity-75"
+        onClick={handleSave}
+      >
+        Save
+      </Button>
     </main>
   );
 }
