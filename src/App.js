@@ -21,6 +21,53 @@ function App() {
   const [reviewData, setReviewData] = useState([]);
   const [newReview, setNewReview] = useState("");
 
+  const [user, setUser] = useState(() => {
+    const persistedUser = localStorage.getItem("user");
+    if (persistedUser) return JSON.parse(persistedUser);
+    else return null;
+  });
+
+  const [loginPhase, setLoginPhase] = useState("Sign In");
+
+  const [taskName, setTaskName] = useState("");
+
+  const [state, setState] = useState({
+    todo: [
+      {
+        card_id: 1,
+        card_name: "Task 1",
+        board_name: "To Do",
+        card_order: 0,
+      },
+      {
+        card_id: 2,
+        card_name: "Task 2",
+        board_name: "To Do",
+        card_order: 1,
+      },
+      {
+        card_id: 3,
+        card_name: "Task 3",
+        board_name: "To Do",
+        card_order: 2,
+      },
+      {
+        card_id: 4,
+        card_name: "Task 4",
+        board_name: "To Do",
+        card_order: 3,
+      },
+      {
+        card_id: 5,
+        card_name: "Task 5",
+        board_name: "To Do",
+        card_order: 4,
+      },
+    ],
+    inProgress: [],
+    done: [],
+  });
+
   const handleLogout = () => {
     setUser(null);
     localStorage.clear();
@@ -37,22 +84,6 @@ function App() {
       }, 3000);
     }
   };
-
-  const [user, setUser] = useState(() => {
-    const persistedUser = localStorage.getItem("user");
-    if (persistedUser) return JSON.parse(persistedUser);
-    else return null;
-  });
-
-  const [loginPhase, setLoginPhase] = useState("Sign In");
-
-  const [taskName, setTaskName] = useState("");
-
-  const [state, setState] = useState({
-    todo: [],
-    inProgress: [],
-    done: [],
-  });
 
   const fetchCards = useCallback(async (userId) => {
     const response = await fetch(`http://localhost:3001/card/${userId}`);
@@ -138,6 +169,10 @@ function App() {
 
   const handleAdd = async (e) => {
     e.preventDefault();
+    if (!user) {
+      handleNotification("Please Sign In!");
+      return;
+    }
     if (!taskName) return;
     try {
       handleNotification("Please wait...", true);
